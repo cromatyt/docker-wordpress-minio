@@ -1,4 +1,4 @@
-# Wodpress on docker with s3 backend
+# Wordpress on docker with Minio s3
 
 :warning: **This project is an example, do not set insecure password in your docker compose !** :warning:
 
