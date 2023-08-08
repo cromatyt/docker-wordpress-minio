@@ -1,0 +1,121 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:10.11.4
+    container_name: mariadb-wp
+    restart: unless-stopped
+    environment:
+      - MARIADB_USER=mariadb
+      - MARIADB_PASSWORD=password
+      - MARIADB_ROOT_PASSWORD=superpassword
+      - MARIADB_DATABASE=wordpress
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+    expose: 
+      - 3306
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      wordpress:
+        ipv4_address: 192.168.66.3
+    
+  adminer:
+    image: adminer:4.8.1-standalone
+    container_name: adminer
+    restart: unless-stopped
+    ports:
+      - 8081:8080
+    networks:
+      wordpress:
+        ipv4_address: 192.168.66.6
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  minio:
+    image: minio/minio:RELEASE.2023-08-04T17-40-21Z
+    container_name: minio-wp
+    command: server --console-address ":9090" /data
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_VOLUMES=/data
+    volumes:
+      - ./minio/data:/data
+    ports:
+      - 9000:9000
+      - 9090:9090
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      wordpress:
+        ipv4_address: 192.168.66.4
+
+  createbuckets:
+    container_name: mc
+    image: minio/mc:RELEASE.2023-08-01T23-30-57Z
+    volumes:
+      - ./minio/wordpress-s3.json:/tmp/wordpress-s3.json
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://192.168.66.4:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --with-versioning minio/wordpress;
+      /usr/bin/mc admin policy create minio wordpress-policy tmp/wordpress-s3.json;
+      /usr/bin/mc admin user add minio newuser password;
+      /usr/bin/mc admin group add minio newgroup newuser;
+      /usr/bin/mc admin policy attach wordpress-policy --user newuser;
+      exit 0;"
+    networks:
+      wordpress:
+        ipv4_address: 192.168.66.7
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  wordpress:
+    image: wordpress:6.2.2-php8.2-apache
+    container_name: wordpress
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=mariadb
+      - WORDPRESS_DB_USER=mariadb
+      - WORDPRESS_DB_PASSWORD=password
+      - WORDPRESS_DB_NAME=wordpress
+    volumes:
+      - ./wordpress/data:/var/www/html
+      #- ./wordpress/plugins:/var/www/html/wp-content/plugins
+      #- ./wordpress/themes:/var/www/html/wp-content/themes
+      - ./wordpress/php/wordpress.ini:/usr/local/etc/php/conf.d/wordpress.ini
+    ports:
+      - 8080:80
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      wordpress:
+        ipv4_address: 192.168.66.2
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      createbuckets:
+        condition: service_completed_successfully
+
+networks:
+  wordpress:
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.66.0/24
+          gateway: 192.168.66.1
