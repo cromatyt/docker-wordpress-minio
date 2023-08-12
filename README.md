@@ -51,9 +51,17 @@ EOL
 sudo chmod www-data:www-data ./wordpress/data
 ```
 
-3. Configure wordpress **media cloud** plugin
+3. Test your plugin setting
 
-for manual install [plugin](https://github.com/Interfacelab/ilab-media-tools/releases/download/4.5.21/ilab-media-tools.4.5.21.zip)
+Go to "System Test" plugin
+and run a test
+
+## Further informations
+
+If you want to use existing bucket images/documents, you need to import your s3 data into wordpress/data/wp-content/uploads.
+Then synchronous with media cloud plugin
+
+Optionnal: Configure wordpress **media cloud** plugin manually
 
 - [x] Check Cloud Storage in the general plugin setup and save change
 go to the plugins setting,
@@ -66,13 +74,3 @@ go to the plugins setting,
 - [x] Reduce "Pre-Signed URL Expiration" to 1 min
 
 Save each section individually
-
-4. Test your plugin setting
-
-Go to "System Test" plugin
-and run a test
-
-## Further informations
-
-If you want to use existing bucket images/documents, you need to import your s3 data into wordpress/data/wp-content/uploads.
-Then synchronous with media cloud plugin
