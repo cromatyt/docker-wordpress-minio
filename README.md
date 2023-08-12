@@ -1,12 +1,14 @@
-# Wordpress on docker with Minio s3
+# Wordpress on docker with s3 backend
 
 :warning: **This project is an example, do not set insecure password in your docker compose !** :warning:
 
 1. Create tree structure
 
 ```bash
-mkdir -p mariadb/data minio/data wordpress/data wordpress/php
+mkdir -p mariadb/data minio/data wordpress/data wordpress/php wordpress/plugins
 ```
+
+Downaload and unzip [media cloud plugin](https://github.com/Interfacelab/ilab-media-tools/releases) into wordpress/plugins
 
 :warning: **Don't use this policy in production !** :warning:
 
@@ -49,28 +51,26 @@ EOL
 sudo chmod www-data:www-data ./wordpress/data
 ```
 
-3. Configure wordpress **media cloud** plugin
-
-for manual install [plugin](https://github.com/Interfacelab/ilab-media-tools/releases/download/4.5.21/ilab-media-tools.4.5.21.zip)
-
-Check Cloud Storage in the general plugin setup and save change
-go to the plugins setting,
-
-Check "Enable Cloud Storage"
-Select minio as Storage provider
-Setup "Provider Settings" (check "Path Style Endpoint")
-Change "Upload Privacy ACL" to private
-Check "Detele From Storage"
-Check "Use Pre-Signed URLs"
-Reduce "Pre-Signed URL Expiration" to 1 min
-Save each section individually
-
-4. Test your plugin setting
+3. Test your plugin setting
 
 Go to "System Test" plugin
-run a test
+and run a test
 
-## Further information
+## Further informations
 
 If you want to use existing bucket images/documents, you need to import your s3 data into wordpress/data/wp-content/uploads.
 Then synchronous with media cloud plugin
+
+Optionnal: Configure wordpress **media cloud** plugin manually
+
+- [x] Check Cloud Storage in the general plugin setup and save change
+go to the plugins setting,
+- [x] Check "Enable Cloud Storage"
+- [x] Select minio as Storage provider
+- [x] Setup "Provider Settings" (check "Path Style Endpoint")
+- [x] Change "Upload Privacy ACL" to private
+- [x] Check "Detele From Storage"
+- [x] Check "Use Pre-Signed URLs"
+- [x] Reduce "Pre-Signed URL Expiration" to 1 min
+
+Save each section individually
